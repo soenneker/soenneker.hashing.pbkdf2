@@ -42,7 +42,6 @@ public static class Pbkdf2HashingUtil
         byte[]? hashArr = null;
 
         Span<byte> salt = saltBytes <= 64 ? stackalloc byte[saltBytes] : (saltArr = ArrayPool<byte>.Shared.Rent(saltBytes)).AsSpan(0, saltBytes);
-        Span<byte> pwd;
         Span<byte> hash = hashBytes <= 64 ? stackalloc byte[hashBytes] : (hashArr = ArrayPool<byte>.Shared.Rent(hashBytes)).AsSpan(0, hashBytes);
 
         try
@@ -53,7 +52,7 @@ public static class Pbkdf2HashingUtil
             // UTF-8 secret -> pooled bytes
             int pwdCount = Encoding.UTF8.GetByteCount(secret);
             pwdArr = ArrayPool<byte>.Shared.Rent(pwdCount);
-            pwd = pwdArr.AsSpan(0, pwdCount);
+            Span<byte> pwd = pwdArr.AsSpan(0, pwdCount);
             _ = Encoding.UTF8.GetBytes(secret, pwd);
 
             // Derive
@@ -122,6 +121,7 @@ public static class Pbkdf2HashingUtil
         int upper = _prefix.Length + 10 + 1 + saltB64Max + 1 + hashB64Max;
 
         char[] arr = ArrayPool<char>.Shared.Rent(upper);
+
         try
         {
             if (!TryHashToSpan(secret, arr, out int written, iterations, saltBytes, hashBytes))
