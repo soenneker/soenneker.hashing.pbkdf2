@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Soenneker.Extensions.String;
+using System;
 using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -15,16 +16,21 @@ public static class Pbkdf2HashingUtil
     private const int _defaultIterations = 300_000;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int Base64DecodedMaxLen(int charLen) => (charLen / 4) * 3;
+    private static int Base64DecodedMaxLen(int charLen) => charLen / 4 * 3;
 
     /// <summary>Hashes a password/secret into a PHC-style PBKDF2 record.</summary>
     public static string Hash(string secret, int iterations = _defaultIterations, int saltBytes = _defaultSaltBytes, int hashBytes = _defaultHashBytes)
     {
-        if (string.IsNullOrWhiteSpace(secret))
-            throw new ArgumentException("Value cannot be null or whitespace.", nameof(secret));
-        if (iterations <= 0) throw new ArgumentOutOfRangeException(nameof(iterations));
-        if (saltBytes <= 0) throw new ArgumentOutOfRangeException(nameof(saltBytes));
-        if (hashBytes <= 0) throw new ArgumentOutOfRangeException(nameof(hashBytes));
+        secret.ThrowIfNullOrWhiteSpace();
+
+        if (iterations <= 0) 
+            throw new ArgumentOutOfRangeException(nameof(iterations));
+
+        if (saltBytes <= 0) 
+            throw new ArgumentOutOfRangeException(nameof(saltBytes));
+
+        if (hashBytes <= 0) 
+            throw new ArgumentOutOfRangeException(nameof(hashBytes));
 
         // Salt
         byte[]? saltArr = null;
@@ -57,17 +63,20 @@ public static class Pbkdf2HashingUtil
             ArrayPool<byte>.Shared.Return(pwdArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(hash);
-            if (hashArr is not null) ArrayPool<byte>.Shared.Return(hashArr, clearArray: true);
+
+            if (hashArr is not null) 
+                ArrayPool<byte>.Shared.Return(hashArr, clearArray: true);
 
             // Salt isn't secret, but clear when returning pooled arrays
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+            if (saltArr is not null) 
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
         }
     }
 
     /// <summary>Verifies a secret against a PBKDF2 record string.</summary>
     public static bool Verify(string secret, string phc)
     {
-        if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(phc))
+        if (secret.IsNullOrWhiteSpace() || phc.IsNullOrWhiteSpace())
             return false;
 
         ReadOnlySpan<char> span = phc.AsSpan();
@@ -78,7 +87,9 @@ public static class Pbkdf2HashingUtil
         span = span.Slice(_prefix.Length); // iterations$saltB64$hashB64
 
         int i1 = span.IndexOf('$');
-        if (i1 < 0) return false;
+        if (i1 < 0)
+            return false;
+
         ReadOnlySpan<char> iterSpan = span.Slice(0, i1);
         span = span.Slice(i1 + 1);
 
@@ -99,7 +110,9 @@ public static class Pbkdf2HashingUtil
 
         if (!Convert.TryFromBase64Chars(saltB64, salt, out int saltLen))
         {
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+            if (saltArr is not null) 
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+
             return false;
         }
 
@@ -146,13 +159,19 @@ public static class Pbkdf2HashingUtil
             ArrayPool<byte>.Shared.Return(pwdArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(derived);
-            if (derivedArr is not null) ArrayPool<byte>.Shared.Return(derivedArr, clearArray: true);
+
+            if (derivedArr is not null) 
+                ArrayPool<byte>.Shared.Return(derivedArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(expected);
-            if (expectedArr is not null) ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
+
+            if (expectedArr is not null) 
+                ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(salt);
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+
+            if (saltArr is not null) 
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
         }
     }
 }
