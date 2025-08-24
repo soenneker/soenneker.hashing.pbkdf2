@@ -15,7 +15,7 @@ public static class Pbkdf2HashingUtil
     private const int _defaultIterations = 300_000;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int Base64EncodedMaxLen(int byteLen) => ((byteLen + 2) / 3) * 4;
+    private static int Base64EncodedMaxLen(int byteLen) => (byteLen + 2) / 3 * 4;
 
     /// <summary>
     /// Span-first hasher that writes a PHC record into <paramref name="dest"/>.
@@ -168,8 +168,8 @@ public static class Pbkdf2HashingUtil
         if (!int.TryParse(iterSpan, NumberStyles.None, CultureInfo.InvariantCulture, out int iterations) || iterations <= 0)
             return false;
 
-        int saltMax = ((saltB64.Length / 4) * 3);
-        int hashMax = ((hashB64.Length / 4) * 3);
+        int saltMax = saltB64.Length / 4 * 3;
+        int hashMax = hashB64.Length / 4 * 3;
 
         byte[]? saltArr = saltMax <= 64 ? null : ArrayPool<byte>.Shared.Rent(saltMax);
         Span<byte> salt = saltArr is null ? stackalloc byte[saltMax] : saltArr.AsSpan(0, saltMax);

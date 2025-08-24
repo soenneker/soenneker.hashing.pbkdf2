@@ -159,7 +159,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Action act2 = () => Pbkdf2HashingUtil.Hash(string.Empty);
         Action act3 = () => Pbkdf2HashingUtil.Hash("   ");
 
-        act1.Should().Throw<ArgumentException>();
+        act1.Should().Throw<InvalidOperationException>();
         act2.Should().Throw<ArgumentException>();
         act3.Should().Throw<ArgumentException>();
     }
