@@ -27,7 +27,7 @@
         <PackageReference Include="Soenneker.Utils.Test" Version="3.0.293" />
         <PackageReference Include="Soenneker.Tests.FixturedUnit" Version="3.0.1978" />
         <PackageReference Include="xUnit.v3" Version="3.0.1" />
-        <PackageReference Include="Soenneker.Tests.Benchmark" Version="3.0.44" />
+        <PackageReference Include="Soenneker.Tests.Benchmark" Version="3.0.45" />
     </ItemGroup>
 
     <ItemGroup>
