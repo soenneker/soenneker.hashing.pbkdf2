@@ -58,9 +58,9 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
     public void Hash_Respects_CustomParameters_And_FormatsPHC()
     {
         const string secret = "password";
-        int iterations = 123_456;
-        int saltBytes = 24;
-        int hashBytes = 48;
+        const int iterations = 123_456;
+        const int saltBytes = 24;
+        const int hashBytes = 48;
 
         string phc = Pbkdf2HashingUtil.Hash(secret, iterations, saltBytes, hashBytes);
 
