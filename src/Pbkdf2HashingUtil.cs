@@ -7,6 +7,9 @@ using System.Text;
 
 namespace Soenneker.Hashing.Pbkdf2;
 
+/// <summary>
+/// A utility library for Pbkdf2 hashing and verification.
+/// </summary>
 public static class Pbkdf2HashingUtil
 {
     private const string _prefix = "pbkdf2_sha256$";
@@ -59,8 +62,9 @@ public static class Pbkdf2HashingUtil
             Rfc2898DeriveBytes.Pbkdf2(pwd, salt, hash, iterations, HashAlgorithmName.SHA256);
 
             // Emit to dest: prefix
-            int written = 0;
-            _prefix.AsSpan().CopyTo(dest);
+            var written = 0;
+            _prefix.AsSpan()
+                   .CopyTo(dest);
             written += _prefix.Length;
 
             // iterations
@@ -97,7 +101,8 @@ public static class Pbkdf2HashingUtil
             }
 
             CryptographicOperations.ZeroMemory(hash);
-            if (hashArr is not null) ArrayPool<byte>.Shared.Return(hashArr, clearArray: true);
+            if (hashArr is not null)
+                ArrayPool<byte>.Shared.Return(hashArr, clearArray: true);
 
             // Salt isn’t secret, but clear if pooled
             if (saltArr is not null)
@@ -154,13 +159,15 @@ public static class Pbkdf2HashingUtil
         phc = phc.Slice(_prefix.Length); // iterations$saltB64$hashB64
 
         int i1 = phc.IndexOf('$');
-        if (i1 <= 0) return false;
+        if (i1 <= 0)
+            return false;
 
         ReadOnlySpan<char> iterSpan = phc.Slice(0, i1);
         phc = phc.Slice(i1 + 1);
 
         int i2 = phc.IndexOf('$');
-        if (i2 <= 0) return false;
+        if (i2 <= 0)
+            return false;
 
         ReadOnlySpan<char> saltB64 = phc.Slice(0, i2);
         ReadOnlySpan<char> hashB64 = phc.Slice(i2 + 1);
@@ -176,7 +183,8 @@ public static class Pbkdf2HashingUtil
 
         if (!Convert.TryFromBase64Chars(saltB64, salt, out int saltLen))
         {
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+            if (saltArr is not null)
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
             return false;
         }
 
@@ -187,8 +195,10 @@ public static class Pbkdf2HashingUtil
 
         if (!Convert.TryFromBase64Chars(hashB64, expected, out int expectedLen))
         {
-            if (expectedArr is not null) ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+            if (expectedArr is not null)
+                ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
+            if (saltArr is not null)
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
             return false;
         }
 
@@ -214,14 +224,17 @@ public static class Pbkdf2HashingUtil
             ArrayPool<byte>.Shared.Return(pwdArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(derived);
-            if (derivedArr is not null) ArrayPool<byte>.Shared.Return(derivedArr, clearArray: true);
+            if (derivedArr is not null)
+                ArrayPool<byte>.Shared.Return(derivedArr, clearArray: true);
 
             CryptographicOperations.ZeroMemory(expected);
-            if (expectedArr is not null) ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
+            if (expectedArr is not null)
+                ArrayPool<byte>.Shared.Return(expectedArr, clearArray: true);
 
             // salt not strictly secret, but wipe pooled memory anyway
             CryptographicOperations.ZeroMemory(salt);
-            if (saltArr is not null) ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
+            if (saltArr is not null)
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: true);
         }
     }
 
