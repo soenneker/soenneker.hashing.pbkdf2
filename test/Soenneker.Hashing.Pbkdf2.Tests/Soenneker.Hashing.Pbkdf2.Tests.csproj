@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Hashing.Pbkdf2.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Hashing.Pbkdf2\Soenneker.Hashing.Pbkdf2.csproj" />
     </ItemGroup>
 
     <ItemGroup>
