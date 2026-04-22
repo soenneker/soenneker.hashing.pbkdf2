@@ -1,18 +1,17 @@
-﻿using AwesomeAssertions;
-using Soenneker.Tests.FixturedUnit;
+using AwesomeAssertions;
+using Soenneker.Tests.HostedUnit;
 using System;
-using Xunit;
 
 namespace Soenneker.Hashing.Pbkdf2.Tests;
 
-[Collection("Collection")]
-public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
 {
-    public Pbkdf2HashingUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public Pbkdf2HashingUtilTests(Host host) : base(host)
     {
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
     }
@@ -21,8 +20,8 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
     [Theory]
     [InlineData("password")]
     [InlineData("correct horse battery staple")]
-    [InlineData("pässwörd")] // UTF-8 non-ASCII
-    [InlineData("emoji 🚀🔥")]
+    [InlineData("p�ssw�rd")] // UTF-8 non-ASCII
+    [InlineData("emoji ????")]
     [InlineData("   leading and trailing   ")]
     public void Hash_Then_Verify_Roundtrip_Succeeds(string secret)
     {
@@ -31,7 +30,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(secret, phc).Should().BeTrue("the same secret should verify against its own PHC record");
     }
 
-    [Fact]
+    [Test]
     public void Hash_ProducesDifferentSaltEachTime()
     {
         const string secret = "password";
@@ -44,7 +43,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(secret, phc2).Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Fails_WithWrongSecret()
     {
         const string secret = "password";
@@ -54,7 +53,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(other, phc).Should().BeFalse("a different secret must not verify");
     }
 
-    [Fact]
+    [Test]
     public void Hash_Respects_CustomParameters_And_FormatsPHC()
     {
         const string secret = "password";
@@ -78,7 +77,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(secret, phc).Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Rejects_WrongPrefix()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
@@ -97,7 +96,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify("password", phc).Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Rejects_When_SaltBase64_IsInvalid()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
@@ -109,7 +108,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify("password", broken).Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Rejects_When_HashBase64_IsInvalid()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
@@ -121,7 +120,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify("password", broken).Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Rejects_When_Salt_Or_Hash_Truncated()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
@@ -142,7 +141,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify("password", brokenHash).Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Verify_Handles_Long_Secrets()
     {
         var longSecret = new string('x', 10_000);
@@ -152,7 +151,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(longSecret + "y", phc).Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Hash_Throws_On_NullOrWhitespace()
     {
         Action act1 = () => Pbkdf2HashingUtil.Hash(null!);
@@ -162,7 +161,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         act2.Should().Throw<InvalidOperationException>();
     }
 
-    [Fact]
+    [Test]
     public void Verify_ReturnsFalse_On_NullOrWhitespace_Inputs()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
@@ -176,7 +175,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify("password", "   ").Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void DifferentIterationCounts_StillVerify()
     {
         const string secret = "password";
@@ -188,7 +187,7 @@ public sealed class Pbkdf2HashingUtilTests : FixturedUnitTest
         Pbkdf2HashingUtil.Verify(secret, high).Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Record_Is_Parsable_And_Sane()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
