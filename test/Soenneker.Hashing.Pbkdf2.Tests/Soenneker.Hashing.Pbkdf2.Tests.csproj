@@ -26,5 +26,11 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Hashing.Pbkdf2\Soenneker.Hashing.Pbkdf2.csproj" />
     </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="**/Benchmarks/**/*.cs" />
+    <Compile Remove="**/Benchmarking/**/*.cs" />
+  </ItemGroup>
 </Project>
+
+
 

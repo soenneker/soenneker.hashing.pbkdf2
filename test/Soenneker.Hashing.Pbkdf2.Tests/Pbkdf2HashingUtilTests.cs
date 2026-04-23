@@ -17,12 +17,12 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     }
 
 
-    [Theory]
-    [InlineData("password")]
-    [InlineData("correct horse battery staple")]
-    [InlineData("pässwörd")] // UTF-8 non-ASCII
-    [InlineData("emoji ????")]
-    [InlineData("   leading and trailing   ")]
+    [Test]
+    [Arguments("password")]
+    [Arguments("correct horse battery staple")]
+    [Arguments("pï¿½sswï¿½rd")] // UTF-8 non-ASCII
+    [Arguments("emoji ????")]
+    [Arguments("   leading and trailing   ")]
     public void Hash_Then_Verify_Roundtrip_Succeeds(string secret)
     {
         string phc = Pbkdf2HashingUtil.Hash(secret);
@@ -86,11 +86,11 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
         Pbkdf2HashingUtil.Verify("password", bad).Should().BeFalse("records with the wrong algorithm prefix must be rejected");
     }
 
-    [Theory]
-    [InlineData("pbkdf2_sha256$")] // missing pieces
-    [InlineData("pbkdf2_sha256$abc$def")] // only 3 parts
-    [InlineData("pbkdf2_sha256$-3$AAAA$BBBB")] // negative iterations
-    [InlineData("pbkdf2_sha256$NaN$AAAA$BBBB")] // non-numeric iterations
+    [Test]
+    [Arguments("pbkdf2_sha256$")] // missing pieces
+    [Arguments("pbkdf2_sha256$abc$def")] // only 3 parts
+    [Arguments("pbkdf2_sha256$-3$AAAA$BBBB")] // negative iterations
+    [Arguments("pbkdf2_sha256$NaN$AAAA$BBBB")] // non-numeric iterations
     public void Verify_Rejects_Malformed_Records(string phc)
     {
         Pbkdf2HashingUtil.Verify("password", phc).Should().BeFalse();
