@@ -146,6 +146,14 @@ public static class Pbkdf2HashingUtil
         }
     }
 
+    /// <summary>
+    /// Executes the hash operation.
+    /// </summary>
+    /// <param name="secret">The secret.</param>
+    /// <param name="iterations">The iterations.</param>
+    /// <param name="saltBytes">The salt bytes.</param>
+    /// <param name="hashBytes">The hash bytes.</param>
+    /// <returns>The result of the operation.</returns>
     public static string Hash(string secret, int iterations = _defaultIterations, int saltBytes = _defaultSaltBytes, int hashBytes = _defaultHashBytes) =>
         Hash(secret.AsSpan(), iterations, saltBytes, hashBytes);
 
@@ -252,5 +260,11 @@ public static class Pbkdf2HashingUtil
         }
     }
 
+    /// <summary>
+    /// Executes the verify operation.
+    /// </summary>
+    /// <param name="secret">The secret.</param>
+    /// <param name="phc">The phc.</param>
+    /// <returns>A value indicating whether the operation succeeded.</returns>
     public static bool Verify(string secret, string phc) => Verify(secret.AsSpan(), phc.AsSpan());
 }
