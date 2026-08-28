@@ -38,9 +38,7 @@ public static class OriginalUtil
 
         try
         {
-            using var kdf = new Rfc2898DeriveBytes(pwdBytes, salt, iterations, HashAlgorithmName.SHA256);
-            byte[] derived = kdf.GetBytes(hashBytes);
-            Buffer.BlockCopy(derived, 0, hash, 0, hashBytes);
+            Rfc2898DeriveBytes.Pbkdf2(pwdBytes, salt, hash, iterations, HashAlgorithmName.SHA256);
 
             string saltB64 = salt.ToBase64String();
             string hashB64 = hash.ToBase64String();
@@ -89,9 +87,7 @@ public static class OriginalUtil
 
         try
         {
-            using var kdf = new Rfc2898DeriveBytes(pwdBytes, salt, iterations, HashAlgorithmName.SHA256);
-            byte[] check = kdf.GetBytes(expected.Length);
-            Buffer.BlockCopy(check, 0, derived, 0, expected.Length);
+            Rfc2898DeriveBytes.Pbkdf2(pwdBytes, salt, derived, iterations, HashAlgorithmName.SHA256);
 
             return CryptographicOperations.FixedTimeEquals(expected, derived);
         }
