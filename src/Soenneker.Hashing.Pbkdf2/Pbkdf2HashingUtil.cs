@@ -24,6 +24,13 @@ public static class Pbkdf2HashingUtil
     /// Span-first hasher that writes a PHC record into <paramref name="dest"/>.
     /// Returns true on success and sets <paramref name="charsWritten"/>.
     /// </summary>
+    /// <param name="secret">Plain-text secret to verify.</param>
+    /// <param name="dest">Dest for the try hash to span operation.</param>
+    /// <param name="charsWritten">Chars Written for the try hash to span operation.</param>
+    /// <param name="iterations">PBKDF2 iteration count.</param>
+    /// <param name="saltBytes">Salt bytes used by the password hash.</param>
+    /// <param name="hashBytes">Hash bytes to encode or verify.</param>
+    /// <returns>true if span-first hasher that writes a PHC record into . Returns true on success and sets; otherwise, false.</returns>
     public static bool TryHashToSpan(ReadOnlySpan<char> secret, Span<char> dest, out int charsWritten, int iterations = _defaultIterations,
         int saltBytes = _defaultSaltBytes, int hashBytes = _defaultHashBytes)
     {
@@ -118,6 +125,11 @@ public static class Pbkdf2HashingUtil
     /// <summary>
     /// Convenience wrapper that allocates exactly once for the final string.
     /// </summary>
+    /// <param name="secret">Plain-text secret to verify.</param>
+    /// <param name="iterations">PBKDF2 iteration count.</param>
+    /// <param name="saltBytes">Salt bytes used by the password hash.</param>
+    /// <param name="hashBytes">Hash bytes to encode or verify.</param>
+    /// <returns>The text produced by hash.</returns>
     public static string Hash(ReadOnlySpan<char> secret, int iterations = _defaultIterations, int saltBytes = _defaultSaltBytes,
         int hashBytes = _defaultHashBytes)
     {
@@ -147,19 +159,22 @@ public static class Pbkdf2HashingUtil
     }
 
     /// <summary>
-    /// Executes the hash operation.
+    /// Determines whether the Pbkdf2 Hashing h.
     /// </summary>
-    /// <param name="secret">The secret.</param>
-    /// <param name="iterations">The iterations.</param>
-    /// <param name="saltBytes">The salt bytes.</param>
-    /// <param name="hashBytes">The hash bytes.</param>
-    /// <returns>The result of the operation.</returns>
+    /// <param name="secret">Plain-text secret to verify.</param>
+    /// <param name="iterations">PBKDF2 iteration count.</param>
+    /// <param name="saltBytes">Salt bytes used by the password hash.</param>
+    /// <param name="hashBytes">Hash bytes to encode or verify.</param>
+    /// <returns>The text produced by hash.</returns>
     public static string Hash(string secret, int iterations = _defaultIterations, int saltBytes = _defaultSaltBytes, int hashBytes = _defaultHashBytes) =>
         Hash(secret.AsSpan(), iterations, saltBytes, hashBytes);
 
     /// <summary>
     /// Span-first verifier; avoids allocating intermediate strings and never materializes the secret as a string.
     /// </summary>
+    /// <param name="secret">Plain-text secret to verify.</param>
+    /// <param name="phc">PBKDF2 hash encoded in PHC string format.</param>
+    /// <returns>true if span-first verifier; avoids allocating intermediate strings and never materializes the secret as a string; otherwise, false.</returns>
     public static bool Verify(ReadOnlySpan<char> secret, ReadOnlySpan<char> phc)
     {
         if (phc.Length < _prefix.Length || !phc.StartsWith(_prefix.AsSpan(), StringComparison.Ordinal))
@@ -261,10 +276,10 @@ public static class Pbkdf2HashingUtil
     }
 
     /// <summary>
-    /// Executes the verify operation.
+    /// Verifies a secret against a PBKDF2 password hash encoded in PHC format.
     /// </summary>
-    /// <param name="secret">The secret.</param>
-    /// <param name="phc">The phc.</param>
-    /// <returns>A value indicating whether the operation succeeded.</returns>
+    /// <param name="secret">Plain-text secret to verify.</param>
+    /// <param name="phc">PBKDF2 hash encoded in PHC string format.</param>
+    /// <returns>true if the secret matches the encoded hash; otherwise, false.</returns>
     public static bool Verify(string secret, string phc) => Verify(secret.AsSpan(), phc.AsSpan());
 }
