@@ -16,6 +16,12 @@ public static class Pbkdf2HashingUtil
     private const int _defaultSaltBytes = 16;
     private const int _defaultHashBytes = 32;
     private const int _defaultIterations = 300_000;
+    private const int _maxIterations = 2_000_000;
+    private const int _minSaltBytes = 8;
+    private const int _maxSaltBytes = 64;
+    private const int _minHashBytes = 16;
+    private const int _maxHashBytes = 128;
+    private const int _maxRecordChars = 512;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int Base64EncodedMaxLen(int byteLen) => (byteLen + 2) / 3 * 4;
@@ -35,7 +41,7 @@ public static class Pbkdf2HashingUtil
         int saltBytes = _defaultSaltBytes, int hashBytes = _defaultHashBytes)
     {
         charsWritten = 0;
-        if (secret.IsEmpty || iterations <= 0 || saltBytes <= 0 || hashBytes <= 0)
+        if (secret.IsEmpty || !ParametersAreSafe(iterations, saltBytes, hashBytes))
             return false;
 
         // Precompute worst-case output length to ensure dest is big enough
@@ -133,6 +139,9 @@ public static class Pbkdf2HashingUtil
     public static string Hash(ReadOnlySpan<char> secret, int iterations = _defaultIterations, int saltBytes = _defaultSaltBytes,
         int hashBytes = _defaultHashBytes)
     {
+        if (secret.IsEmpty || !ParametersAreSafe(iterations, saltBytes, hashBytes))
+            throw new InvalidOperationException("PBKDF2 parameters exceed the supported safety limits.");
+
         // Compute an upper bound and rent a char buffer
         int saltB64Max = Base64EncodedMaxLen(saltBytes);
         int hashB64Max = Base64EncodedMaxLen(hashBytes);
@@ -177,7 +186,7 @@ public static class Pbkdf2HashingUtil
     /// <returns>true if span-first verifier; avoids allocating intermediate strings and never materializes the secret as a string; otherwise, false.</returns>
     public static bool Verify(ReadOnlySpan<char> secret, ReadOnlySpan<char> phc)
     {
-        if (phc.Length < _prefix.Length || !phc.StartsWith(_prefix.AsSpan(), StringComparison.Ordinal))
+        if (secret.IsEmpty || phc.Length < _prefix.Length || phc.Length > _maxRecordChars || !phc.StartsWith(_prefix.AsSpan(), StringComparison.Ordinal))
             return false;
 
         phc = phc.Slice(_prefix.Length); // iterations$saltB64$hashB64
@@ -196,7 +205,10 @@ public static class Pbkdf2HashingUtil
         ReadOnlySpan<char> saltB64 = phc.Slice(0, i2);
         ReadOnlySpan<char> hashB64 = phc.Slice(i2 + 1);
 
-        if (!int.TryParse(iterSpan, NumberStyles.None, CultureInfo.InvariantCulture, out int iterations) || iterations <= 0)
+        if (!int.TryParse(iterSpan, NumberStyles.None, CultureInfo.InvariantCulture, out int iterations) || iterations is <= 0 or > _maxIterations)
+            return false;
+
+        if (saltB64.Length > Base64EncodedMaxLen(_maxSaltBytes) || hashB64.Length > Base64EncodedMaxLen(_maxHashBytes))
             return false;
 
         int saltMax = saltB64.Length / 4 * 3;
@@ -219,6 +231,14 @@ public static class Pbkdf2HashingUtil
 
         salt = salt.Slice(0, saltLen);
 
+        if (saltLen is < _minSaltBytes or > _maxSaltBytes)
+        {
+            CryptographicOperations.ZeroMemory(salt);
+            if (saltArr is not null)
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: false);
+            return false;
+        }
+
         byte[]? expectedArr = hashMax <= 64 ? null : ArrayPool<byte>.Shared.Rent(hashMax);
         Span<byte> expected = expectedArr is null ? stackalloc byte[hashMax] : expectedArr.AsSpan(0, hashMax);
 
@@ -240,6 +260,18 @@ public static class Pbkdf2HashingUtil
         }
 
         expected = expected.Slice(0, expectedLen);
+
+        if (expectedLen is < _minHashBytes or > _maxHashBytes)
+        {
+            CryptographicOperations.ZeroMemory(expected);
+            if (expectedArr is not null)
+                ArrayPool<byte>.Shared.Return(expectedArr, clearArray: false);
+
+            CryptographicOperations.ZeroMemory(salt);
+            if (saltArr is not null)
+                ArrayPool<byte>.Shared.Return(saltArr, clearArray: false);
+            return false;
+        }
 
         // Secret -> UTF8 bytes (pooled)
         int pwdCount = Encoding.UTF8.GetByteCount(secret);
@@ -282,4 +314,8 @@ public static class Pbkdf2HashingUtil
     /// <param name="phc">PBKDF2 hash encoded in PHC string format.</param>
     /// <returns>true if the secret matches the encoded hash; otherwise, false.</returns>
     public static bool Verify(string secret, string phc) => Verify(secret.AsSpan(), phc.AsSpan());
+
+    private static bool ParametersAreSafe(int iterations, int saltBytes, int hashBytes) =>
+        iterations is >= 1 and <= _maxIterations && saltBytes is >= _minSaltBytes and <= _maxSaltBytes &&
+        hashBytes is >= _minHashBytes and <= _maxHashBytes;
 }

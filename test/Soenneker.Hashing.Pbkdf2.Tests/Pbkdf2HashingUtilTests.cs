@@ -203,4 +203,20 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
         salt.Length.Should().BeInRange(8, 1024);
         hash.Length.Should().BeInRange(16, 1024);
     }
+
+    [Test]
+    public void Verify_Rejects_Excessive_Iterations()
+    {
+        const string record = "pbkdf2_sha256$2147483647$c2FsdHNhbHRzYWx0c2FsdA==$aGFzaGhhc2hoYXNoaGFzaGhhc2g=";
+
+        Pbkdf2HashingUtil.Verify("password", record).Should().BeFalse();
+    }
+
+    [Test]
+    public void Verify_Rejects_Oversized_Record()
+    {
+        string record = "pbkdf2_sha256$300000$" + new string('A', 600) + "$AAAA";
+
+        Pbkdf2HashingUtil.Verify("password", record).Should().BeFalse();
+    }
 }
