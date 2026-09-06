@@ -27,7 +27,7 @@ bool valid = Pbkdf2HashingUtil.Verify(candidatePassword, storedHash);
 The encoded record has this format:
 
 ```text
-pbkdf2_sha256$300000$<salt-base64>$<hash-base64>
+$pbkdf2-sha256$i=300000$<salt-base64>$<hash-base64>
 ```
 
 Each hash gets a new cryptographically secure salt. The defaults are 300,000 iterations, a 16-byte salt, and a 32-byte derived hash.

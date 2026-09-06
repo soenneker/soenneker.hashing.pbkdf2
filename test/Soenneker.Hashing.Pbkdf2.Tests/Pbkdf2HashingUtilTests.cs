@@ -65,11 +65,11 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
 
         string[] parts = phc.Split('$', StringSplitOptions.RemoveEmptyEntries);
         parts.Should().HaveCount(4);
-        parts[0].Should().Be("pbkdf2_sha256");
-        parts[1].Should().Be(iterations.ToString());
+        parts[0].Should().Be("pbkdf2-sha256");
+        parts[1].Should().Be($"i={iterations}");
 
-        byte[] salt = Convert.FromBase64String(parts[2]);
-        byte[] hash = Convert.FromBase64String(parts[3]);
+        byte[] salt = Convert.FromBase64String(PadBase64(parts[2]));
+        byte[] hash = Convert.FromBase64String(PadBase64(parts[3]));
 
         salt.Length.Should().Be(saltBytes);
         hash.Length.Should().Be(hashBytes);
@@ -81,16 +81,16 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     public void Verify_Rejects_WrongPrefix()
     {
         string phc = Pbkdf2HashingUtil.Hash("password");
-        string bad = phc.Replace("pbkdf2_sha256$", "pbkdf2_sha1$", StringComparison.Ordinal);
+        string bad = phc.Replace("pbkdf2-sha256", "pbkdf2-sha1", StringComparison.Ordinal);
 
         Pbkdf2HashingUtil.Verify("password", bad).Should().BeFalse("records with the wrong algorithm prefix must be rejected");
     }
 
     [Test]
-    [Arguments("pbkdf2_sha256$")] // missing pieces
-    [Arguments("pbkdf2_sha256$abc$def")] // only 3 parts
-    [Arguments("pbkdf2_sha256$-3$AAAA$BBBB")] // negative iterations
-    [Arguments("pbkdf2_sha256$NaN$AAAA$BBBB")] // non-numeric iterations
+    [Arguments("$pbkdf2-sha256")]
+    [Arguments("$pbkdf2-sha256$i=abc$def")]
+    [Arguments("$pbkdf2-sha256$i=-3$QUFBQUFBQUFBQUE$QUFBQUFBQUFBQUFBQUFBQUFBQUE")]
+    [Arguments("$pbkdf2-sha256$i=NaN$QUFBQUFBQUFBQUE$QUFBQUFBQUFBQUFBQUFBQUFBQUE")]
     public void Verify_Rejects_Malformed_Records(string phc)
     {
         Pbkdf2HashingUtil.Verify("password", phc).Should().BeFalse();
@@ -194,11 +194,11 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
         string[] parts = phc.Split('$', StringSplitOptions.RemoveEmptyEntries);
 
         parts.Should().HaveCount(4);
-        parts[0].Should().Be("pbkdf2_sha256");
-        parts[1].Should().MatchRegex(@"^\d+$");
+        parts[0].Should().Be("pbkdf2-sha256");
+        parts[1].Should().MatchRegex(@"^i=\d+$");
 
-        byte[] salt = Convert.FromBase64String(parts[2]);
-        byte[] hash = Convert.FromBase64String(parts[3]);
+        byte[] salt = Convert.FromBase64String(PadBase64(parts[2]));
+        byte[] hash = Convert.FromBase64String(PadBase64(parts[3]));
 
         salt.Length.Should().BeInRange(8, 1024);
         hash.Length.Should().BeInRange(16, 1024);
@@ -207,7 +207,7 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     [Test]
     public void Verify_Rejects_Excessive_Iterations()
     {
-        const string record = "pbkdf2_sha256$2147483647$c2FsdHNhbHRzYWx0c2FsdA==$aGFzaGhhc2hoYXNoaGFzaGhhc2g=";
+        const string record = "$pbkdf2-sha256$i=2147483647$c2FsdHNhbHRzYWx0c2FsdA$aGFzaGhhc2hoYXNoaGFzaGhhc2g";
 
         Pbkdf2HashingUtil.Verify("password", record).Should().BeFalse();
     }
@@ -215,8 +215,10 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     [Test]
     public void Verify_Rejects_Oversized_Record()
     {
-        string record = "pbkdf2_sha256$300000$" + new string('A', 600) + "$AAAA";
+        string record = "$pbkdf2-sha256$i=300000$" + new string('A', 600) + "$AAAA";
 
         Pbkdf2HashingUtil.Verify("password", record).Should().BeFalse();
     }
+
+    private static string PadBase64(string value) => value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=');
 }
