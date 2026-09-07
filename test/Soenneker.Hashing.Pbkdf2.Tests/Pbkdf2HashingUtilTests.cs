@@ -33,7 +33,7 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     [Test]
     public void Hash_ProducesDifferentSaltEachTime()
     {
-        const string secret = "password";
+        const string secret = "VIII6Wp5z6mzY2DzRlCtA@";
 
         string phc1 = Pbkdf2HashingUtil.Hash(secret);
         string phc2 = Pbkdf2HashingUtil.Hash(secret);
