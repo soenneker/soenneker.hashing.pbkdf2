@@ -24,6 +24,12 @@ string storedHash = Pbkdf2HashingUtil.Hash(password);
 bool valid = Pbkdf2HashingUtil.Verify(candidatePassword, storedHash);
 ```
 
+Validate a stored record without deriving a hash:
+
+```csharp
+bool validPhc = Pbkdf2HashingUtil.IsValidPhc(storedHash);
+```
+
 The encoded record has this format:
 
 ```text

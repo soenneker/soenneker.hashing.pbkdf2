@@ -14,6 +14,7 @@ namespace Soenneker.Hashing.Pbkdf2;
 public static class Pbkdf2HashingUtil
 {
     private const string _identifier = "pbkdf2-sha256";
+    private const string _identifierPrefix = "$" + _identifier + "$";
     private const string _iterationsParameter = "i";
     private const int _defaultSaltBytes = 16;
     private const int _defaultHashBytes = 32;
@@ -155,6 +156,27 @@ public static class Pbkdf2HashingUtil
         Hash(secret.AsSpan(), iterations, saltBytes, hashBytes);
 
     /// <summary>
+    /// Determines whether a value is a supported PBKDF2-SHA256 PHC record.
+    /// </summary>
+    /// <param name="phc">The PHC record to validate.</param>
+    /// <returns><see langword="true"/> when the record has valid PBKDF2-SHA256 syntax, parameters, salt, and hash; otherwise, <see langword="false"/>.</returns>
+    public static bool IsValidPhc(ReadOnlySpan<char> phc)
+    {
+        if (!TryParsePhc(phc, out PhcString? record, out _))
+            return false;
+
+        return HasValidDecodedLength(record!.Salt!, _minSaltBytes, _maxSaltBytes) &&
+               HasValidDecodedLength(record.Hash!, _minHashBytes, _maxHashBytes);
+    }
+
+    /// <summary>
+    /// Determines whether a value is a supported PBKDF2-SHA256 PHC record.
+    /// </summary>
+    /// <param name="phc">The PHC record to validate.</param>
+    /// <returns><see langword="true"/> when the record has valid PBKDF2-SHA256 syntax, parameters, salt, and hash; otherwise, <see langword="false"/>.</returns>
+    public static bool IsValidPhc(string? phc) => IsValidPhc(phc.AsSpan());
+
+    /// <summary>
     /// Span-first verifier; avoids allocating intermediate strings and never materializes the secret as a string.
     /// </summary>
     /// <param name="secret">Plain-text secret to verify.</param>
@@ -162,21 +184,11 @@ public static class Pbkdf2HashingUtil
     /// <returns>true if span-first verifier; avoids allocating intermediate strings and never materializes the secret as a string; otherwise, false.</returns>
     public static bool Verify(ReadOnlySpan<char> secret, ReadOnlySpan<char> phc)
     {
-        if (secret.IsEmpty || phc.Length > _maxRecordChars || !PhcFormatter.TryParse(phc.ToString(), out PhcString? parsed))
+        if (secret.IsEmpty || !TryParsePhc(phc, out PhcString? record, out int iterations))
             return false;
 
-        PhcString record = parsed!;
-
-        if (
-            !record.Identifier.Equals(_identifier, StringComparison.Ordinal) || record.Version is not null || record.Parameters.Count != 1 ||
-            !record.TryGetParameter(_iterationsParameter, out string? iterationsText) || record.Salt is null || record.Hash is null)
-            return false;
-
-        ReadOnlySpan<char> saltB64 = record.Salt;
+        ReadOnlySpan<char> saltB64 = record!.Salt;
         ReadOnlySpan<char> hashB64 = record.Hash;
-
-        if (!int.TryParse(iterationsText, NumberStyles.None, CultureInfo.InvariantCulture, out int iterations) || iterations is <= 0 or > _maxIterations)
-            return false;
 
         if (saltB64.Length > Base64EncodedMaxLen(_maxSaltBytes) || hashB64.Length > Base64EncodedMaxLen(_maxHashBytes))
             return false;
@@ -288,6 +300,28 @@ public static class Pbkdf2HashingUtil
     private static bool ParametersAreSafe(int iterations, int saltBytes, int hashBytes) =>
         iterations is >= 1 and <= _maxIterations && saltBytes is >= _minSaltBytes and <= _maxSaltBytes &&
         hashBytes is >= _minHashBytes and <= _maxHashBytes;
+
+    private static bool TryParsePhc(ReadOnlySpan<char> phc, out PhcString? record, out int iterations)
+    {
+        record = null;
+        iterations = 0;
+
+        if (phc.IsEmpty || phc.Length > _maxRecordChars || !phc.StartsWith(_identifierPrefix, StringComparison.Ordinal) ||
+            !PhcFormatter.TryParse(phc.ToString(), out record))
+            return false;
+
+        return record!.Identifier.Equals(_identifier, StringComparison.Ordinal) && record.Version is null && record.Parameters.Count == 1 &&
+               record.TryGetParameter(_iterationsParameter, out string? iterationsText) && record.Salt is not null && record.Hash is not null &&
+               int.TryParse(iterationsText, NumberStyles.None, CultureInfo.InvariantCulture, out iterations) && iterations is > 0 and <= _maxIterations &&
+               record.Salt.Length <= Base64EncodedMaxLen(_maxSaltBytes) && record.Hash.Length <= Base64EncodedMaxLen(_maxHashBytes);
+    }
+
+    private static bool HasValidDecodedLength(ReadOnlySpan<char> value, int minimum, int maximum)
+    {
+        int decodedMaximum = (value.Length + 3) / 4 * 3;
+        Span<byte> decoded = stackalloc byte[decodedMaximum];
+        return TryDecodePhcBase64(value, decoded, out int bytesWritten) && bytesWritten >= minimum && bytesWritten <= maximum;
+    }
 
     private static bool TryDecodePhcBase64(ReadOnlySpan<char> value, Span<byte> destination, out int bytesWritten)
     {

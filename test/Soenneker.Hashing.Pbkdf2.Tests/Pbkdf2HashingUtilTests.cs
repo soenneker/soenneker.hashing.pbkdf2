@@ -54,6 +54,16 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
     }
 
     [Test]
+    public void Verify_Succeeds_WithCorrectHash()
+    {
+        const string secret = "password";
+        const string phc = "$pbkdf2-sha256$i=300000$yROTn3KQwllfb/yOPinJRQ$cxELEqt5TEdke937t+w1kkMGBvl1wWujbT4f9KYrXDM";
+
+        Pbkdf2HashingUtil.Verify(secret, phc).Should().BeTrue();
+    }
+
+
+    [Test]
     public void Hash_Respects_CustomParameters_And_FormatsPHC()
     {
         const string secret = "password";
@@ -218,6 +228,27 @@ public sealed class Pbkdf2HashingUtilTests : HostedUnitTest
         string record = "$pbkdf2-sha256$i=300000$" + new string('A', 600) + "$AAAA";
 
         Pbkdf2HashingUtil.Verify("password", record).Should().BeFalse();
+    }
+
+    [Test]
+    public void IsValidPhc_Accepts_Supported_Record()
+    {
+        string record = Pbkdf2HashingUtil.Hash("password");
+
+        Pbkdf2HashingUtil.IsValidPhc(record).Should().BeTrue();
+        Pbkdf2HashingUtil.IsValidPhc(record.AsSpan()).Should().BeTrue();
+    }
+
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$YW5kYWZha2VoYXNo")]
+    [Arguments("$pbkdf2-sha256$i=2000001$c2FsdHNhbHRzYWx0c2FsdA$aGFzaGhhc2hoYXNoaGFzaGhhc2g")]
+    [Arguments("$pbkdf2-sha256$i=300000$bad!salt$aGFzaGhhc2hoYXNoaGFzaGhhc2g")]
+    [Arguments("$pbkdf2-sha256$i=300000$c2FsdA$aGFzaA")]
+    public void IsValidPhc_Rejects_Unsupported_Records(string? record)
+    {
+        Pbkdf2HashingUtil.IsValidPhc(record).Should().BeFalse();
     }
 
     private static string PadBase64(string value) => value.PadRight(value.Length + (4 - value.Length % 4) % 4, '=');
