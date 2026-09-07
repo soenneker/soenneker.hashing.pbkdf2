@@ -76,12 +76,18 @@ public static class Pbkdf2HashingUtil
             // Derive
             Rfc2898DeriveBytes.Pbkdf2(pwd, salt, hash, iterations, HashAlgorithmName.SHA256);
 
-            string saltText = Convert.ToBase64String(salt).TrimEnd('=');
-            string hashText = Convert.ToBase64String(hash).TrimEnd('=');
-            var record = new PhcString(_identifier, parameters: [new PhcParameter(_iterationsParameter, iterations.ToString(CultureInfo.InvariantCulture))],
-                salt: saltText, hash: hashText);
-
-            return PhcFormatter.TryFormat(record, dest, out charsWritten);
+            _identifierPrefix.AsSpan().CopyTo(dest);
+            int position = _identifierPrefix.Length;
+            dest[position++] = 'i';
+            dest[position++] = '=';
+            iterations.TryFormat(dest[position..], out int iterationsWritten, provider: CultureInfo.InvariantCulture);
+            position += iterationsWritten;
+            dest[position++] = '$';
+            position += WriteUnpaddedBase64(salt, dest[position..]);
+            dest[position++] = '$';
+            position += WriteUnpaddedBase64(hash, dest[position..]);
+            charsWritten = position;
+            return true;
         }
         finally
         {
@@ -331,4 +337,14 @@ public static class Pbkdf2HashingUtil
         padded[value.Length..].Fill('=');
         return Convert.TryFromBase64Chars(padded, destination, out bytesWritten);
     }
+
+    private static int WriteUnpaddedBase64(ReadOnlySpan<byte> value, Span<char> destination)
+    {
+        Span<char> encoded = stackalloc char[Base64EncodedMaxLen(value.Length)];
+        Convert.TryToBase64Chars(value, encoded, out int written);
+        ReadOnlySpan<char> unpadded = encoded[..written].TrimEnd('=');
+        unpadded.CopyTo(destination);
+        return unpadded.Length;
+    }
+
 }
