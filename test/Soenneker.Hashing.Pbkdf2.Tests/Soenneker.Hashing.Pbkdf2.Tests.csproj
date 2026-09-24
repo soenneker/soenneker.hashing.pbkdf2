@@ -31,6 +31,9 @@
     <Compile Remove="**/Benchmarks/**/*.cs" />
     <Compile Remove="**/Benchmarking/**/*.cs" />
   </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="AwesomeAssertions" Version="9.6.0" />
+    </ItemGroup>
 </Project>
 
 
