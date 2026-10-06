@@ -19,7 +19,7 @@
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.Arrays.Bytes" Version="4.0.69" />
         <PackageReference Include="Soenneker.Utils.Test" Version="4.0.331" />
-        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="4.0.307" />
+        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="4.0.308" />
         <PackageReference Include="TUnit" Version="1.72.16" />
         <PackageReference Include="Soenneker.Tests.Benchmark" Version="4.0.184" />
     </ItemGroup>
