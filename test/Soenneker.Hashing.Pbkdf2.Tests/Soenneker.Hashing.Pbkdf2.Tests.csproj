@@ -17,11 +17,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Extensions.Arrays.Bytes" Version="4.0.70" />
-        <PackageReference Include="Soenneker.Utils.Test" Version="4.0.331" />
+        <PackageReference Include="Soenneker.Extensions.Arrays.Bytes" Version="4.0.71" />
+        <PackageReference Include="Soenneker.Utils.Test" Version="4.0.332" />
         <PackageReference Include="Soenneker.Tests.HostedUnit" Version="4.0.318" />
-        <PackageReference Include="TUnit" Version="1.73.19" />
-        <PackageReference Include="Soenneker.Tests.Benchmark" Version="4.0.190" />
+        <PackageReference Include="TUnit" Version="1.74.0" />
+        <PackageReference Include="Soenneker.Tests.Benchmark" Version="4.0.191" />
     </ItemGroup>
 
     <ItemGroup>
