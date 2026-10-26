@@ -45,6 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Soenneker.Hashing.Phc" Version="4.0.23" />
+      <PackageReference Include="Soenneker.Hashing.Phc" Version="11.0.25" />
     </ItemGroup>
 </Project>
